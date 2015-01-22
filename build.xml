@@ -1,0 +1,90 @@
+<project name="TraaSTesting" default="build" basedir=".">
+	<description>
+		For testing different TraaS-jars
+	</description>
+
+	<property name="src" location="./src"/>
+	<property name="build" location="./build"/>
+
+	<target name="init">
+	    <!-- create timestamp-->
+	    <tstamp/>
+	    <mkdir dir="${build}"/>
+	</target>
+
+	
+	<path id="TraaSDefault.classpath">
+        <pathelement location="./TraaS.jar"/>
+		<pathelement location="${build}"/>
+    </path>
+    
+    <path id="TraaSEnhanced.classpath">
+       <pathelement location="./TraaSEnhanced.jar"/>
+	   <pathelement location="${build}"/>
+    </path>
+    
+	<target name="build" depends="init">
+		<ant dir ="./TraaS" antfile="build.xml" target="dist"  inheritAll="false"/>		
+		<copy file="./TraaS/dist/lib/latest/TraaS.jar" tofile="./TraaSEnhanced.jar"/>
+		<ant dir ="./TraaS" antfile="build.xml" target="clean"  inheritAll="false"/>
+		<get src="http://sourceforge.net/projects/traas/files/TraaS.jar/download" dest="TraaS.jar" skipexisting="true"/>
+		
+	    <javac debug="true" srcdir="${src}" destdir="${build}">
+	        <classpath refid="TraaSEnhanced.classpath"/>
+	    </javac>
+	</target>
+
+	<macrodef name="runSimpleMacro">
+		<attribute name="steps" default="3600"/>	
+		<sequential>
+		  <echo>steps is @{steps}</echo>
+		  <echo message="Running simple scenario with default jar and @{steps} steps"/>
+			<java classname="Test">
+				<arg value="@{steps}"/>
+				<classpath refid="TraaSDefault.classpath"/>
+			</java>
+			<echo message="Running simple scenario with enhanced jar and @{steps} steps"/>
+			<java classname="Test">
+				<arg value="@{steps}"/>
+				<classpath refid="TraaSEnhanced.classpath"/>
+			</java>
+			<echo message="Running enhanced simple scenario with enhanced jar and @{steps} steps"/>
+			<java classname="TestBreaking">
+				<arg value="@{steps}"/>
+				<classpath refid="TraaSEnhanced.classpath"/>
+			</java>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="runStressTestMacro">
+		<attribute name="steps" default="3600"/>	
+		<sequential>
+		  <echo>steps is @{steps}</echo>
+		  <echo message="Running stresstest scenario with default jar and @{steps} steps"/>
+			<java classname="StressTest">
+				<arg value="@{steps}"/>
+				<classpath refid="TraaSDefault.classpath"/>
+			</java>
+			<echo message="Running stresstest scenario with enhanced jar and @{steps} steps"/>
+			<java classname="StressTest">
+				<arg value="@{steps}"/>
+				<classpath refid="TraaSEnhanced.classpath"/>
+			</java>
+			<echo message="Running enhanced stresstest scenario with enhanced jar and @{steps} steps"/>
+			<java classname="StressTestBreaking">
+				<arg value="@{steps}"/>
+				<classpath refid="TraaSEnhanced.classpath"/>
+			</java>
+		</sequential>
+	</macrodef>
+	
+	<target name="runSimple" depends="build">
+		<runSimpleMacro steps="3600"/>
+		<runSimpleMacro steps="36000"/>
+	</target>
+	
+	<target name="runStressTest" depends="build">
+		<runStressTestMacro steps="100"/>
+		<runStressTestMacro steps="200"/>
+	</target>
+</project>
